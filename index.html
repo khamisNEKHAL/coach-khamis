@@ -811,6 +811,9 @@ function renderStats() {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 renderHome();
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/coach-khamis/sw.js');
+}  
 </script>
 </body>
 </html>
