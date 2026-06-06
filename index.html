@@ -281,7 +281,7 @@
           <div class="session-card" onclick="selectSession('cardio')">
             <div class="session-icon">🏃</div>
             <div class="session-type">Cardio</div>
-            <div class="session-desc">Run · Bike · Intervals</div>
+            <div class="session-desc">Run · Bike · Swim · Rythme</div>
           </div>
         </div>
       </div>
@@ -310,14 +310,6 @@
         <div class="prog-bar-bg"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
         <div class="prog-label" id="prog-label" style="margin-bottom:12px">0 / 0 logged</div>
 
-        <!-- Warmup -->
-        <div id="warmup-section" style="display:none">
-          <div class="section-divider">Warm-up</div>
-          <div class="card" style="margin-bottom:12px">
-            <div class="core-chips" id="warmup-chips"></div>
-          </div>
-        </div>
-
         <div id="exercises-container"></div>
 
         <!-- Add exercise -->
@@ -333,14 +325,6 @@
 
         <!-- Core finisher -->
         <div id="core-section" style="display:none">
-          <div class="section-divider">Core finisher</div>
-          <div class="card" style="margin-bottom:12px">
-            <div class="card-body" style="padding-bottom:8px">
-              <input type="text" id="core-search" placeholder="Search core exercise…" oninput="filterCoreLib()" style="width:100%;height:36px;padding:0 10px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);margin-bottom:10px">
-              <div id="core-lib-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
-              <div id="core-selected" class="core-chips" style="padding:0;flex-direction:column;gap:4px"></div>
-            </div>
-          </div>
         </div>
 
         <!-- Wrap-up -->
@@ -447,7 +431,7 @@ const EXERCISE_LIBRARY = {
   pecdeck:      { name:'Pec deck / machine fly',   group:'Chest',           defaultWeight:40, defaultReps:[12,12,12] },
   cablefly:     { name:'Cable crossover fly',       group:'Chest',           defaultWeight:10, defaultReps:[12,12,12], note:'Per side' },
   dbbench:      { name:'DB flat bench press',       group:'Chest',           defaultWeight:20, defaultReps:[10,10,10] },
-  bbbench:      { name:'Barbell bench press',        group:'Chest',           defaultWeight:60, defaultReps:[8,8,8,8] },
+  barbellbench: { name:'Barbell bench press',        group:'Chest',           defaultWeight:60, defaultReps:[8,8,8,8] },
   // ── SHOULDERS ──────────────────────────────────────────────
   ohp:          { name:'DB shoulder press',         group:'Shoulders',       defaultWeight:12, defaultReps:[8,8,8] },
   laterals:     { name:'Lateral raises',            group:'Shoulders',       defaultWeight:5,  defaultReps:[12,12,12] },
@@ -487,36 +471,47 @@ const EXERCISE_LIBRARY = {
   // ── CALVES ─────────────────────────────────────────────────
   calves:       { name:'Calf raises (Smith)',       group:'Calves',          defaultWeight:49, defaultReps:[12,12,12] },
   seatedcalves: { name:'Seated calf raises',        group:'Calves',          defaultWeight:30, defaultReps:[15,15,15] },
+  // ── CORE ───────────────────────────────────────────────────
+  plank:        { name:'Plank',                     group:'Core',            defaultWeight:0,  defaultReps:[45], note:'Duration in seconds' },
+  heeltouch:    { name:'Heel touch',                group:'Core',            defaultWeight:0,  defaultReps:[20] },
+  sidebends:    { name:'Side bends',                group:'Core',            defaultWeight:8,  defaultReps:[15] },
+  crunch:       { name:'Crunch',                    group:'Core',            defaultWeight:0,  defaultReps:[20] },
+  kneerise:     { name:'Montée de genoux',          group:'Core',            defaultWeight:0,  defaultReps:[20] },
+  legraise:     { name:'Relevé de jambes',          group:'Core',            defaultWeight:0,  defaultReps:[15] },
+  russian:      { name:'Russian twist',             group:'Core',            defaultWeight:8,  defaultReps:[20] },
+  bicycle:      { name:'Bicycle crunch',            group:'Core',            defaultWeight:0,  defaultReps:[20] },
+  abwheel:      { name:'Ab wheel rollout',          group:'Core',            defaultWeight:0,  defaultReps:[10] },
+  deadbug:      { name:'Dead bug',                  group:'Core',            defaultWeight:0,  defaultReps:[10], note:'Per side' },
+  hollowhold:   { name:'Hollow body hold',          group:'Core',            defaultWeight:0,  defaultReps:[30], note:'Duration in seconds' },
+  lsit:         { name:'L-sit hold',                group:'Core',            defaultWeight:0,  defaultReps:[20], note:'Duration in seconds' },
+  toetouchcrunch:{ name:'Toe touch crunch',         group:'Core',            defaultWeight:0,  defaultReps:[15] },
+  // ── WARMUP ─────────────────────────────────────────────────
+  inchworm:     { name:'Inchworm',                  group:'Warmup',          defaultWeight:0,  defaultReps:[8] },
+  worldgreatest:{ name:'World greatest stretch',    group:'Warmup',          defaultWeight:0,  defaultReps:[5], note:'Per side' },
+  hipcirc:      { name:'Hip circles',               group:'Warmup',          defaultWeight:0,  defaultReps:[10], note:'Per side' },
+  legswing:     { name:'Leg swings',                group:'Warmup',          defaultWeight:0,  defaultReps:[10], note:'Per side' },
+  armcirc:      { name:'Arm circles',               group:'Warmup',          defaultWeight:0,  defaultReps:[10], note:'Per side' },
+  bandpull:     { name:'Band pull-apart',           group:'Warmup',          defaultWeight:0,  defaultReps:[15] },
+  calfstretch:  { name:'Calf stretch',              group:'Warmup',          defaultWeight:0,  defaultReps:[30], note:'Per side, seconds' },
+  thoracic:     { name:'Thoracic rotation',         group:'Warmup',          defaultWeight:0,  defaultReps:[8], note:'Per side' },
+  jumpjack:     { name:'Jumping jacks',             group:'Warmup',          defaultWeight:0,  defaultReps:[20] },
+  highknees:    { name:'High knees',                group:'Warmup',          defaultWeight:0,  defaultReps:[20] },
   // ── HYROX ──────────────────────────────────────────────────
-  row:          { name:'Row',                       group:'Cardio',          defaultWeight:0,  defaultReps:[500], note:'500m – log time (s)' },
-  burpees:      { name:'Burpees',                   group:'Cardio',          defaultWeight:0,  defaultReps:[15] },
-  carry:        { name:'Farmer carry',              group:'Cardio',          defaultWeight:20, defaultReps:[20], note:'20m · weight per hand' },
-  ski:          { name:'SkiErg',                    group:'Cardio',          defaultWeight:0,  defaultReps:[250], note:'250m – log time (s)' },
-  sled:         { name:'Sled push',                 group:'Cardio',          defaultWeight:50, defaultReps:[20], note:'20m' },
-  wallball:     { name:'Wall balls',                group:'Cardio',          defaultWeight:6,  defaultReps:[20] },
-  sandbag:      { name:'Sandbag lunges',            group:'Cardio',          defaultWeight:20, defaultReps:[20], note:'20m' },
-  // ── RUNNING / CARDIO ───────────────────────────────────────
-  run5k:        { name:'Run 5km',                   group:'Cardio',          defaultWeight:0,  defaultReps:[1], note:'Log time (mm:ss)' },
-  run10k:       { name:'Run 10km',                  group:'Cardio',          defaultWeight:0,  defaultReps:[1], note:'Log time (mm:ss)' },
-  cycling:      { name:'Cycling',                   group:'Cardio',          defaultWeight:0,  defaultReps:[1], note:'Log distance (km) or time (min)' },
-  runintervals: { name:'Intervals 400m',             group:'Cardio',          defaultWeight:0,  defaultReps:[8], note:'Reps – log each time (s)' },
-  jumprope:     { name:'Jump rope',                 group:'Cardio',          defaultWeight:0,  defaultReps:[3], note:'Sets – log duration (min)' },
-};
-
-const CORE_LIBRARY = [
-  'Plank 3×45s', 'Heel touch 3×20', 'Side bends 3×15',
-  'Hollow hold 3×30s', 'Hanging leg raise 3×12', 'Cable crunch 3×15',
-  'Ab rollout 3×10', 'Side plank 2×40s/side', 'Dead bug 3×10/side',
-  'Russian twist 3×20', 'Bicycle crunch 3×20', 'Mountain climbers 3×30s',
-  'Ab wheel 3×10', 'Pallof press 3×12/side',
-];
-
-const WARMUP_DATA = {
-  push:   ['Shoulder circles 2×10', 'Band pull-aparts 2×15', 'Light press warmup 2×10', 'Arm swings 30s'],
-  pull:   ['Band pull-aparts 2×15', 'Lat activation 2×10', 'Scapular pull-ups 10', 'Arm circles 30s'],
-  legs:   ['Hip circles 2×10', 'Leg swings 10/side', 'BW squats 2×15', 'Walking lunges (BW) 10'],
-  hyrox:  ['Easy jog/row 5 min', 'Dynamic stretch 3 min', 'Joint mobility', 'Practice movements'],
-  cardio: ['Walk 5 min', 'Dynamic stretch 3 min', 'Strides 3×30s', 'Hip flexor stretch 30s'],
+  row:          { name:'Row',                       group:'Hyrox',           defaultWeight:0,  defaultReps:[500], note:'500m – log time (s)' },
+  burpees:      { name:'Burpees',                   group:'Hyrox',           defaultWeight:0,  defaultReps:[15] },
+  carry:        { name:'Farmer carry',              group:'Hyrox',           defaultWeight:20, defaultReps:[20], note:'20m · weight per hand' },
+  ski:          { name:'SkiErg',                    group:'Hyrox',           defaultWeight:0,  defaultReps:[250], note:'250m – log time (s)' },
+  sled:         { name:'Sled push',                 group:'Hyrox',           defaultWeight:50, defaultReps:[20], note:'20m' },
+  wallball:     { name:'Wall balls',                group:'Hyrox',           defaultWeight:6,  defaultReps:[20] },
+  sandbag:      { name:'Sandbag lunges',            group:'Hyrox',           defaultWeight:20, defaultReps:[20], note:'20m' },
+  // ── CARDIO ─────────────────────────────────────────────────
+  run:          { name:'Running',                   group:'Cardio',          defaultWeight:0,  defaultReps:[30], note:'Distance in min (e.g. 30 = 30min)' },
+  run5k:        { name:'5km run',                   group:'Cardio',          defaultWeight:0,  defaultReps:[1],  note:'Log time in min (e.g. 24)' },
+  run10k:       { name:'10km run',                  group:'Cardio',          defaultWeight:0,  defaultReps:[1],  note:'Log time in min' },
+  intervals:    { name:'Intervals',                 group:'Cardio',          defaultWeight:0,  defaultReps:[8],  note:'Number of intervals' },
+  cycling:      { name:'Cycling',                   group:'Cardio',          defaultWeight:0,  defaultReps:[45], note:'Duration in min' },
+  swim:         { name:'Swimming',                  group:'Cardio',          defaultWeight:0,  defaultReps:[30], note:'Duration in min' },
+  jump:         { name:'Jump rope',                 group:'Cardio',          defaultWeight:0,  defaultReps:[5],  note:'Duration in min' },
 };
 
 function makeEx(id, overrides = {}) {
@@ -546,7 +541,7 @@ const SESSIONS_TEMPLATE = {
       makeEx('rope-oh'),
       makeEx('pushdown'),
     ],
-    extras: ['pecdeck','cablefly','dbbench','bbbench','incline30','frontrase','arnoldpress','skullcrusher'],
+    extras: ['pecdeck','cablefly','dbbench','incline30','frontrase','arnoldpress','skullcrusher'],
     hasCore: true
   },
   pull: {
@@ -582,20 +577,30 @@ const SESSIONS_TEMPLATE = {
       makeEx('ski'),
     ],
     extras: ['sled','wallball','sandbag'],
+    warmup: ['jumpjack','highknees','inchworm'],
     hasCore: false,
     isHyrox: true
   },
   cardio: {
-    name: 'Cardio', icon: '🏃', badge: 'Run · Bike · Intervals',
+    name: 'Cardio', icon: '🏃', badge: 'Run · Bike · Swim',
     exercises: [
       makeEx('run5k'),
-      makeEx('runintervals'),
     ],
-    extras: ['run10k','cycling','jumprope','row','ski','burpees'],
+    extras: ['run','run10k','intervals','cycling','swim','jump','row','ski','burpees'],
+    warmup: ['jumpjack','highknees','legswing','calfstretch'],
     hasCore: false,
     isCardio: true
   }
 };
+
+// Add warmup + core to standard sessions
+SESSIONS_TEMPLATE.push = SESSIONS_TEMPLATE.push || {};
+SESSIONS_TEMPLATE.push.warmup = ['inchworm','worldgreatest','bandpull','armcirc','thoracic'];
+SESSIONS_TEMPLATE.push.core = ['plank','heeltouch','sidebends','crunch','kneerise','legraise','russian','bicycle','abwheel','deadbug','hollowhold','lsit','toetouchcrunch'];
+SESSIONS_TEMPLATE.pull.warmup = ['inchworm','bandpull','armcirc','thoracic','legswing'];
+SESSIONS_TEMPLATE.pull.core = ['plank','heeltouch','sidebends','crunch','kneerise','legraise','russian','bicycle','abwheel','deadbug','hollowhold','lsit','toetouchcrunch'];
+SESSIONS_TEMPLATE.legs.warmup = ['inchworm','worldgreatest','hipcirc','legswing','highknees','jumpjack'];
+SESSIONS_TEMPLATE.legs.core = ['plank','heeltouch','sidebends','crunch','kneerise','legraise','russian','bicycle','abwheel','deadbug'];
 
 let sessions = JSON.parse(localStorage.getItem('sessions') || '[]');
 let currentSession = null;
@@ -658,7 +663,7 @@ function renderHome() {
   const last = sessions[sessions.length - 1];
   const el = document.getElementById('last-session-preview');
   if (last) {
-    const t = SESSIONS_TEMPLATE[last.type];
+    const t = SESSIONS_TEMPLATE[last.type] || SESSIONS_TEMPLATE['push'];
     el.innerHTML = '<div class="card-header"><div><div style="font-weight:600;font-size:15px">' + t.icon + ' ' + t.name + '</div><div style="font-size:12px;color:var(--text2)">' + new Date(last.date).toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'short'}) + ' · ' + (last.duration || '–') + ' min</div></div><span class="badge badge-success">Done</span></div><div style="padding:10px 14px 12px;font-size:13px;color:var(--text2)">' + last.exercises.slice(0,3).map(e => '<span style="color:var(--text);font-weight:600">' + e.name.split(' ')[0] + '</span> ' + (e.actualWeight || '–') + 'kg ' + (e.reps || []).join('/') ).join(' &nbsp;·&nbsp; ') + '</div>';
   } else {
     el.innerHTML = '<div class="card-body" style="color:var(--text2);font-size:14px">No sessions logged yet.</div>';
@@ -688,19 +693,50 @@ function selectSession(type) {
   durInterval = setInterval(updateDuration, 30000);
   updateDuration();
 
-  // Warmup
-  const warmup = WARMUP_DATA[type] || [];
-  const warmupChips = document.getElementById('warmup-chips');
-  warmupChips.innerHTML = warmup.map(w => `<div class="core-chip" onclick="this.classList.toggle('done')">${w}</div>`).join('');
-  document.getElementById('warmup-section').style.display = warmup.length ? 'block' : 'none';
+  // Warmup section
+  const warmupSection = document.getElementById('core-section');
+  warmupSection.innerHTML = '';
 
-  // Core
-  document.getElementById('core-section').style.display = tmpl.hasCore ? 'block' : 'none';
-  if (tmpl.hasCore) {
-    document.getElementById('core-selected').innerHTML = '';
-    document.getElementById('core-search').value = '';
-    filterCoreLib();
+  if (tmpl.warmup && tmpl.warmup.length) {
+    const wdiv = document.createElement('div');
+    wdiv.innerHTML = '<div class="section-divider">Warmup</div>';
+    warmupSection.appendChild(wdiv);
+    const wcontainer = document.createElement('div');
+    wcontainer.id = 'warmup-container';
+    warmupSection.appendChild(wcontainer);
+    tmpl.warmup.forEach(id => {
+      const ex = makeEx(id);
+      buildExBlockIn(ex, wcontainer);
+    });
+    // Add warmup search
+    const wadd = document.createElement('div');
+    wadd.innerHTML = `<div class="card" style="margin-bottom:8px"><div class="card-body" style="padding-bottom:8px">
+      <input type="text" id="warmup-search" placeholder="Add warmup exercise…" oninput="filterSectionLib('warmup-search','warmup-lib','warmup-container','Warmup')" style="width:100%;height:34px;padding:0 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);margin-bottom:8px">
+      <div id="warmup-lib" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div></div>`;
+    warmupSection.appendChild(wadd);
+    filterSectionLib('warmup-search','warmup-lib','warmup-container','Warmup');
   }
+
+  // Core section
+  if (tmpl.core && tmpl.core.length) {
+    const cdiv = document.createElement('div');
+    cdiv.innerHTML = '<div class="section-divider">Core finisher</div>';
+    warmupSection.appendChild(cdiv);
+    const ccontainer = document.createElement('div');
+    ccontainer.id = 'core-container';
+    warmupSection.appendChild(ccontainer);
+    // Add core search
+    const cadd = document.createElement('div');
+    cadd.innerHTML = `<div class="card" style="margin-bottom:8px"><div class="card-body" style="padding-bottom:8px">
+      <input type="text" id="core-search" placeholder="Add core exercise…" oninput="filterSectionLib('core-search','core-lib','core-container','Core')" style="width:100%;height:34px;padding:0 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);margin-bottom:8px">
+      <div id="core-lib" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div></div>`;
+    warmupSection.appendChild(cadd);
+    filterSectionLib('core-search','core-lib','core-container','Core');
+  }
+
+  warmupSection.style.display = 'block';
 
   // Build exercises
   const container = document.getElementById('exercises-container');
@@ -711,6 +747,66 @@ function selectSession(type) {
   populateExLib();
   updateProgress();
   document.getElementById('header-sub').textContent = 'In progress';
+}
+
+function buildExBlockIn(ex, container) {
+  const tmpl = SESSIONS_TEMPLATE[currentSession];
+  const isCardio = tmpl && tmpl.isCardio;
+  const block = document.createElement('div');
+  block.className = 'ex-block';
+  block.dataset.exId = ex.id;
+  const prevRepsStr = (ex.prevReps || ex.targetReps).join('/');
+  const prevInfo = ex.prevWeight ? ex.prevWeight + 'kg · ' + prevRepsStr : prevRepsStr;
+  const weightRow = ex.targetWeight === 0 ? '' : `
+    <div class="ex-weight-row">
+      <div class="weight-chip"><span class="weight-label">Target</span><span class="weight-target-val">${ex.targetWeight} kg</span></div>
+      <div class="weight-chip weight-actual"><span class="weight-label">Actual</span><input type="number" class="weight-input" placeholder="kg" min="0" max="300" step="0.5"></div>
+      <span class="weight-unit">kg</span>
+    </div>`;
+  const setsHtml = ex.targetReps.map((target, i) => `
+    <div class="set-col">
+      <div class="set-lbl">S${i+1}</div>
+      <input type="number" class="set-inp" placeholder="–" min="0" max="9999" data-target="${target}" inputmode="numeric">
+      <div class="set-target">→${target}</div>
+    </div>`).join('');
+  const noteHint = ex.note ? `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${ex.note}</div>` : '';
+  block.innerHTML = `
+    <div class="ex-top">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="ex-name">${ex.name}</div>
+        <button onclick="this.closest('.ex-block').remove()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+    </div>
+    ${weightRow}
+    <div class="sets-area">
+      ${noteHint}
+      <div class="sets-row">${setsHtml}</div>
+      <textarea class="note-inp" rows="1" placeholder="Notes…"></textarea>
+    </div>`;
+  container.appendChild(block);
+}
+
+function filterSectionLib(searchId, libId, containerId, groupFilter) {
+  const query = (document.getElementById(searchId)?.value || '').toLowerCase();
+  const container = document.getElementById(containerId);
+  const existing = new Set([...( container ? container.querySelectorAll('.ex-block') : [])].map(b => b.dataset.exId));
+  const list = document.getElementById(libId);
+  if (!list) return;
+  list.innerHTML = '';
+  Object.entries(EXERCISE_LIBRARY).forEach(([id, ex]) => {
+    if (ex.group !== groupFilter) return;
+    if (existing.has(id)) return;
+    if (query && !ex.name.toLowerCase().includes(query)) return;
+    const chip = document.createElement('div');
+    chip.style.cssText = 'padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer';
+    chip.textContent = ex.name;
+    chip.onclick = () => {
+      const exObj = makeEx(id);
+      buildExBlockIn(exObj, container);
+      chip.remove();
+    };
+    list.appendChild(chip);
+  });
 }
 
 function buildExBlock(ex) {
@@ -784,38 +880,6 @@ function filterExLib() {
   });
 }
 
-function filterCoreLib() {
-  const searchEl = document.getElementById('core-search');
-  if (!searchEl) return;
-  const query = (searchEl.value || '').toLowerCase();
-  const existing = new Set([...document.querySelectorAll('#core-selected .core-chip')].map(c => c.dataset.name));
-  const list = document.getElementById('core-lib-list');
-  list.innerHTML = '';
-  CORE_LIBRARY.forEach(name => {
-    if (existing.has(name)) return;
-    if (query && !name.toLowerCase().includes(query)) return;
-    const chip = document.createElement('div');
-    chip.style.cssText = 'padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer';
-    chip.textContent = name;
-    chip.onclick = () => addCoreChip(name);
-    list.appendChild(chip);
-  });
-}
-
-function addCoreChip(name) {
-  const container = document.getElementById('core-selected');
-  const chip = document.createElement('div');
-  chip.className = 'core-chip done';
-  chip.dataset.name = name;
-  chip.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;border-radius:var(--radius-sm);';
-  chip.innerHTML = `<span>${name}</span><button onclick="event.stopPropagation();this.closest('.core-chip').remove();filterCoreLib()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 2px">×</button>`;
-  chip.onclick = e => { if (e.target.tagName !== 'BUTTON') chip.classList.toggle('done'); };
-  container.appendChild(chip);
-  const searchEl = document.getElementById('core-search');
-  if (searchEl) searchEl.value = '';
-  filterCoreLib();
-}
-
 function backToSelector() {
   if (durInterval) clearInterval(durInterval);
   document.getElementById('log-selector').style.display = 'block';
@@ -877,22 +941,21 @@ function finishSession() {
   const tmpl = SESSIONS_TEMPLATE[currentSession];
   const blocks = document.querySelectorAll('.ex-block[data-ex-id]');
   const exData = [];
-  blocks.forEach(b => {
-    const exId = b.dataset.exId;
-    const libEx = EXERCISE_LIBRARY[exId] || {};
+  blocks.forEach((b, i) => {
+    const ex = tmpl.exercises[i];
     const sets = [...b.querySelectorAll('.set-inp')].map(s => parseInt(s.value) || 0);
     const w = b.querySelector('.weight-input');
     const rpe = b.querySelector('.rpe-chip.active');
-    const noteEl = b.querySelector('textarea.note-inp');
+    const note = b.querySelector('.note-inp');
     exData.push({
-      id: exId,
-      name: b.querySelector('.ex-name') ? b.querySelector('.ex-name').textContent : (libEx.name || exId),
-      actualWeight: w ? parseFloat(w.value) || libEx.defaultWeight || 0 : libEx.defaultWeight || 0,
-      targetWeight: libEx.defaultWeight || 0,
+      id: ex.id,
+      name: ex.name,
+      actualWeight: w ? parseFloat(w.value) || ex.targetWeight : ex.targetWeight,
+      targetWeight: ex.targetWeight,
       reps: sets,
-      targetReps: libEx.defaultReps || [],
+      targetReps: ex.targetReps,
       rpe: rpe ? parseInt(rpe.textContent) : null,
-      note: noteEl ? noteEl.value : ''
+      note: note ? note.value : ''
     });
   });
 
@@ -942,20 +1005,19 @@ function renderHistory() {
     const tmpl = SESSIONS_TEMPLATE[s.type];
     const dateStr = new Date(s.date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
     const exSummary = s.exercises.map(e =>
-      `<div class="ex-summary"><span class="ex-summary-name">${e.name}</span> — ${e.actualWeight > 0 ? e.actualWeight+'kg · ' : ''}${e.reps.join('/')}${e.rpe ? ' · RPE '+e.rpe : ''}${e.note ? '<div style="font-size:12px;color:var(--text3);margin-top:2px;font-style:italic">'+e.note+'</div>' : ''}</div>`
+      `<div class="ex-summary"><span class="ex-summary-name">${e.name}</span> — ${e.actualWeight}kg · ${e.reps.join('/')}${e.rpe ? ' · RPE '+e.rpe : ''}${e.note ? '<div style="font-size:12px;color:var(--text3);margin-top:2px;font-style:italic">"'+e.note+'"</div>' : ''}</div>`
     ).join('');
-    const notesHtml = s.notes ? `<div style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;color:var(--text2)"><span style="font-weight:600;color:var(--text);margin-right:4px">📝</span>${s.notes}</div>` : '';
     const badges = (s.energy ? `<span class="badge badge-info">⚡ ${s.energy}/5</span> ` : '') + (s.sleep ? `<span class="badge badge-success">😴 ${s.sleep}/5</span>` : '');
     return `
       <div class="session-history-card" onclick="toggleHistory(this)">
         <div class="shc-header">
           <div>
             <div class="shc-title">${tmpl.icon} ${tmpl.name}</div>
-            <div class="shc-meta">${dateStr} · ${s.duration || '–'} min ${badges}${s.notes ? ' 📝' : ''}</div>
+            <div class="shc-meta">${dateStr} · ${s.duration || '–'} min ${badges}</div>
           </div>
           <span style="font-size:20px;color:var(--text3)">›</span>
         </div>
-        <div class="shc-detail">${exSummary}${notesHtml}</div>
+        <div class="shc-detail">${exSummary}${s.notes ? '<div style="margin-top:8px;font-size:13px;color:var(--text2);font-style:italic">"'+s.notes+'"</div>' : ''}</div>
       </div>`;
   }).join('');
 }
