@@ -843,7 +843,7 @@ function renderHistory() {
     const tmpl = SESSIONS_TEMPLATE[s.type];
     const dateStr = new Date(s.date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
     const exSummary = s.exercises.map(e =>
-      `<div class="ex-summary"><span class="ex-summary-name">${e.name}</span> — ${e.actualWeight}kg · ${e.reps.join('/')}${e.rpe ? ' · RPE '+e.rpe : ''}</div>`
+      `<div class="ex-summary"><span class="ex-summary-name">${e.name}</span> — ${e.actualWeight}kg · ${e.reps.join('/')}${e.rpe ? ' · RPE '+e.rpe : ''}${e.note ? '<div style="font-size:12px;color:var(--text3);margin-top:2px;font-style:italic">"'+e.note+'"</div>' : ''}</div>`
     ).join('');
     const badges = (s.energy ? `<span class="badge badge-info">⚡ ${s.energy}/5</span> ` : '') + (s.sleep ? `<span class="badge badge-success">😴 ${s.sleep}/5</span>` : '');
     return `
