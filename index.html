@@ -288,9 +288,13 @@
           <div id="active-session-badge" style="margin-left:auto"></div>
         </div>
 
-        <!-- Start time -->
+        <!-- Start time + date -->
         <div class="card" style="margin-bottom:12px">
           <div class="start-row">
+            <span style="font-size:13px;color:var(--text2)">📅 Date</span>
+            <input type="date" class="time-inp" id="session-date-inp" style="flex:1">
+          </div>
+          <div class="start-row" style="border-top:0.5px solid var(--border)">
             <span style="font-size:13px;color:var(--text2)">⏱ Start</span>
             <input type="time" class="time-inp" id="start-time-inp">
             <button class="now-btn" onclick="setNow()">Now</button>
@@ -541,8 +545,9 @@ function selectSession(type) {
     document.getElementById('active-session-badge').innerHTML += ' <span class="badge badge-warning">No dips</span>';
   }
 
-  // Start time
+  // Start time + date
   const now = new Date();
+  document.getElementById('session-date-inp').value = now.toISOString().split('T')[0];
   document.getElementById('start-time-inp').value = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
   startDate = now;
   if (durInterval) clearInterval(durInterval);
@@ -700,9 +705,10 @@ function finishSession() {
   const s = new Date(); s.setHours(h, m, 0, 0);
   const duration = Math.max(0, Math.floor((new Date() - s) / 60000));
 
+  const dateVal = document.getElementById('session-date-inp').value || new Date().toISOString().split('T')[0];
   const record = {
     id: Date.now(),
-    date: new Date().toISOString(),
+    date: new Date(dateVal + 'T12:00:00').toISOString(),
     type: currentSession,
     duration,
     exercises: exData,
@@ -812,8 +818,8 @@ function renderStats() {
 renderHome();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/coach-khamis/sw.js');
-}  
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
