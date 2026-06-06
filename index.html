@@ -307,6 +307,17 @@
 
         <div id="exercises-container"></div>
 
+        <!-- Add exercise -->
+        <div id="add-ex-section">
+          <div class="section-divider">Add exercise</div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-body" style="padding-bottom:8px">
+              <input type="text" id="ex-search" placeholder="Search exercise…" oninput="filterExLib()" style="width:100%;height:36px;padding:0 10px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);margin-bottom:10px">
+              <div id="ex-lib-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- Core finisher -->
         <div id="core-section" style="display:none">
           <div class="section-divider">Core finisher</div>
@@ -415,49 +426,126 @@
 
 <script>
 // ─── DATA ────────────────────────────────────────────────────────────────────
+const EXERCISE_LIBRARY = {
+  // ── CHEST ──────────────────────────────────────────────────
+  bench:        { name:'Smith bench press',         group:'Chest',           defaultWeight:30, defaultReps:[10,10,9,9] },
+  incline:      { name:'Incline DB press (15°)',    group:'Chest',           defaultWeight:16, defaultReps:[9,9,9] },
+  incline30:    { name:'Incline DB press (30°)',    group:'Chest',           defaultWeight:14, defaultReps:[10,10,10] },
+  pecdeck:      { name:'Pec deck / machine fly',   group:'Chest',           defaultWeight:40, defaultReps:[12,12,12] },
+  cablefly:     { name:'Cable crossover fly',       group:'Chest',           defaultWeight:10, defaultReps:[12,12,12], note:'Per side' },
+  dbbench:      { name:'DB flat bench press',       group:'Chest',           defaultWeight:20, defaultReps:[10,10,10] },
+  // ── SHOULDERS ──────────────────────────────────────────────
+  ohp:          { name:'DB shoulder press',         group:'Shoulders',       defaultWeight:12, defaultReps:[8,8,8] },
+  laterals:     { name:'Lateral raises',            group:'Shoulders',       defaultWeight:5,  defaultReps:[12,12,12] },
+  frontraise:   { name:'Front raise (DB)',          group:'Shoulders',       defaultWeight:6,  defaultReps:[12,12,12] },
+  arnoldpress:  { name:'Arnold press',              group:'Shoulders',       defaultWeight:10, defaultReps:[10,10,10] },
+  // ── TRICEPS ────────────────────────────────────────────────
+  'rope-oh':    { name:'Rope OH extension',         group:'Triceps',         defaultWeight:29, defaultReps:[12,12,12], superset:true },
+  pushdown:     { name:'Cable pushdown',            group:'Triceps',         defaultWeight:29, defaultReps:[12,12,12], superset:true },
+  skullcrusher: { name:'Skull crushers (EZ bar)',   group:'Triceps',         defaultWeight:20, defaultReps:[10,10,10] },
+  // ── BACK ───────────────────────────────────────────────────
+  pullup:       { name:'Assisted pull-ups (pronated)', group:'Back',         defaultWeight:25, defaultReps:[8,8,8,8], note:'Assistance – lower = harder' },
+  pullupsupi:   { name:'Assisted pull-ups (supinated)', group:'Back',        defaultWeight:25, defaultReps:[8,8,8,8], note:'Assistance – lower = harder' },
+  hrow:         { name:'Horizontal row',            group:'Back',            defaultWeight:35, defaultReps:[12,12,12] },
+  lowrow:       { name:'Low row machine',           group:'Back',            defaultWeight:45, defaultReps:[10,10,10] },
+  latpull:      { name:'Lat pulldown',              group:'Back',            defaultWeight:40, defaultReps:[10,10,10] },
+  seatedrow:    { name:'Seated cable row',          group:'Back',            defaultWeight:40, defaultReps:[12,12,12] },
+  singlearow:   { name:'Single-arm DB row',         group:'Back',            defaultWeight:20, defaultReps:[10,10,10], note:'Per side' },
+  // ── BICEPS ─────────────────────────────────────────────────
+  dbcurl:       { name:'DB curl',                   group:'Biceps',          defaultWeight:9,  defaultReps:[9,9,9] },
+  hammercurl:   { name:'Hammer curl rope',          group:'Biceps',          defaultWeight:29, defaultReps:[12,12,12], superset:true },
+  cablecurl:    { name:'Cable curl',                group:'Biceps',          defaultWeight:15, defaultReps:[12,12,12] },
+  concentcurl:  { name:'Concentration curl',        group:'Biceps',          defaultWeight:8,  defaultReps:[12,12,12], note:'Per side' },
+  // ── REAR DELTS ─────────────────────────────────────────────
+  facepull:     { name:'Face pull',                 group:'Rear delts',      defaultWeight:11, defaultReps:[12,12,12], superset:true },
+  reardeckfly:  { name:'Rear delt fly (machine)',   group:'Rear delts',      defaultWeight:20, defaultReps:[15,15,15] },
+  // ── QUADS ──────────────────────────────────────────────────
+  squat:        { name:'Squat',                     group:'Quads',           defaultWeight:50, defaultReps:[10,10,10,10] },
+  goblet:       { name:'Goblet squat (KB)',          group:'Quads',           defaultWeight:24, defaultReps:[12,12,12] },
+  legpress:     { name:'Leg press',                 group:'Quads',           defaultWeight:80, defaultReps:[12,12,12] },
+  legext:       { name:'Leg extension',             group:'Quads',           defaultWeight:30, defaultReps:[15,15,15] },
+  bulgariansq:  { name:'Bulgarian split squat',     group:'Quads / Glutes',  defaultWeight:10, defaultReps:[10,10,10], note:'Weight per hand · per leg' },
+  // ── GLUTES / HAMSTRINGS ────────────────────────────────────
+  lunges:       { name:'Walking lunges',            group:'Quads / Glutes',  defaultWeight:12, defaultReps:[10,10,10], note:'Weight per hand · 10 steps/leg' },
+  rdl:          { name:'Romanian deadlift (DB)',    group:'Hamstrings',      defaultWeight:20, defaultReps:[10,10,10] },
+  legcurl:      { name:'Leg curl',                  group:'Hamstrings',      defaultWeight:25, defaultReps:[15,15,15] },
+  hipthrust:    { name:'Hip thrust (Smith)',        group:'Glutes',          defaultWeight:40, defaultReps:[12,12,12] },
+  // ── CALVES ─────────────────────────────────────────────────
+  calves:       { name:'Calf raises (Smith)',       group:'Calves',          defaultWeight:49, defaultReps:[12,12,12] },
+  seatedcalves: { name:'Seated calf raises',        group:'Calves',          defaultWeight:30, defaultReps:[15,15,15] },
+  // ── HYROX ──────────────────────────────────────────────────
+  row:          { name:'Row',                       group:'Cardio',          defaultWeight:0,  defaultReps:[500], note:'500m – log time (s)' },
+  burpees:      { name:'Burpees',                   group:'Cardio',          defaultWeight:0,  defaultReps:[15] },
+  carry:        { name:'Farmer carry',              group:'Cardio',          defaultWeight:20, defaultReps:[20], note:'20m · weight per hand' },
+  ski:          { name:'SkiErg',                    group:'Cardio',          defaultWeight:0,  defaultReps:[250], note:'250m – log time (s)' },
+  sled:         { name:'Sled push',                 group:'Cardio',          defaultWeight:50, defaultReps:[20], note:'20m' },
+  wallball:     { name:'Wall balls',                group:'Cardio',          defaultWeight:6,  defaultReps:[20] },
+  sandbag:      { name:'Sandbag lunges',            group:'Cardio',          defaultWeight:20, defaultReps:[20], note:'20m' },
+};
+
+function makeEx(id, overrides = {}) {
+  const lib = EXERCISE_LIBRARY[id];
+  return {
+    id,
+    name: lib.name,
+    group: lib.group,
+    targetWeight: overrides.targetWeight ?? lib.defaultWeight,
+    targetReps: overrides.targetReps ?? lib.defaultReps,
+    prevWeight: overrides.prevWeight ?? lib.defaultWeight,
+    prevReps: overrides.prevReps ?? lib.defaultReps,
+    note: overrides.note ?? lib.note ?? null,
+    superset: overrides.superset ?? lib.superset ?? false,
+    newLoad: overrides.newLoad ?? false,
+  };
+}
+
 const SESSIONS_TEMPLATE = {
   push: {
     name: 'Push', icon: '💪', badge: 'Chest · Shoulders · Triceps',
     exercises: [
-      { id:'bench', name:'Smith bench press', group:'Chest', targetWeight:30, targetReps:[10,10,9,9], prevWeight:30, prevReps:[9,9,8,8] },
-      { id:'incline', name:'Incline DB press (15°)', group:'Chest', targetWeight:16, targetReps:[9,9,9], prevWeight:16, prevReps:[8,8,8] },
-      { id:'ohp', name:'DB shoulder press', group:'Shoulders', targetWeight:12, targetReps:[8,8,8], prevWeight:10, prevReps:[10,10,10] },
-      { id:'laterals', name:'Lateral raises', group:'Shoulders', targetWeight:5, targetReps:[12,12,12], prevWeight:4, prevReps:[15,15,15], newLoad:true },
-      { id:'rope-oh', name:'Rope OH extension', group:'Triceps', targetWeight:29, targetReps:[12,12,12], prevWeight:29, prevReps:[12,12,12], superset:true },
-      { id:'pushdown', name:'Cable pushdown', group:'Triceps', targetWeight:29, targetReps:[12,12,12], prevWeight:29, prevReps:[12,12,12], superset:true },
+      makeEx('bench',     { prevReps:[9,9,8,8] }),
+      makeEx('incline',   { prevReps:[8,8,8] }),
+      makeEx('ohp',       { prevWeight:10, prevReps:[10,10,10] }),
+      makeEx('laterals',  { prevWeight:4, prevReps:[15,15,15], newLoad:true }),
+      makeEx('rope-oh'),
+      makeEx('pushdown'),
     ],
+    extras: ['pecdeck','cablefly','dbbench','incline30','frontrase','arnoldpress','skullcrusher'],
     hasCore: true
   },
   pull: {
     name: 'Pull', icon: '🔙', badge: 'Back · Biceps',
     exercises: [
-      { id:'pullup', name:'Assisted pull-ups (pronated)', group:'Back', targetWeight:25, targetReps:[8,8,8,8], prevWeight:28, prevReps:[8,8,8,8], note:'Assistance weight – lower = harder' },
-      { id:'hrow', name:'Horizontal row', group:'Back', targetWeight:35, targetReps:[12,12,12], prevWeight:35, prevReps:[12,12] },
-      { id:'lowrow', name:'Low row machine', group:'Back', targetWeight:45, targetReps:[10,10,10], prevWeight:40, prevReps:[12,12,12] },
-      { id:'dbcurl', name:'DB curl', group:'Biceps', targetWeight:9, targetReps:[9,9,9], prevWeight:10, prevReps:[7,9,9] },
-      { id:'hammercurl', name:'Hammer curl rope', group:'Biceps', targetWeight:29, targetReps:[12,12,12], prevWeight:29, prevReps:[12,12,11], superset:true },
-      { id:'facepull', name:'Face pull', group:'Rear delts', targetWeight:11, targetReps:[12,12,12], prevWeight:11, prevReps:[12,12,11], superset:true },
+      makeEx('pullup',      { prevWeight:28, prevReps:[8,8,8,8] }),
+      makeEx('hrow',        { prevReps:[12,12] }),
+      makeEx('lowrow',      { prevWeight:40, prevReps:[12,12,12] }),
+      makeEx('dbcurl',      { prevWeight:10, prevReps:[7,9,9] }),
+      makeEx('hammercurl',  { prevReps:[12,12,11] }),
+      makeEx('facepull',    { prevReps:[12,12,11] }),
     ],
+    extras: ['latpull','seatedrow','singlearow','pullupsupi','cablecurl','concentcurl','reardeckfly'],
     hasCore: true
   },
   legs: {
     name: 'Legs', icon: '🦵', badge: 'Squat · Lunges · Curl · Calves',
     exercises: [
-      { id:'squat', name:'Squat', group:'Quads', targetWeight:50, targetReps:[10,10,10,10], prevWeight:50, prevReps:[8,10,10,10] },
-      { id:'lunges', name:'Walking lunges', group:'Quads / Glutes', targetWeight:12, targetReps:[10,10,10], prevWeight:12, prevReps:[10,10,10], note:'Weight per hand · 10 steps/leg' },
-      { id:'legcurl', name:'Leg curl', group:'Hamstrings', targetWeight:25, targetReps:[15,15,15], prevWeight:25, prevReps:[15,15,15] },
-      { id:'calves', name:'Calf raises (Smith)', group:'Calves', targetWeight:49, targetReps:[12,12,12], prevWeight:49, prevReps:[12,12,12] },
+      makeEx('squat',   { prevReps:[8,10,10,10] }),
+      makeEx('lunges'),
+      makeEx('legcurl'),
+      makeEx('calves'),
     ],
+    extras: ['legpress','legext','bulgariansq','rdl','hipthrust','goblet','seatedcalves'],
     hasCore: false
   },
   hyrox: {
     name: 'Hyrox', icon: '🔥', badge: 'Conditioning',
     exercises: [
-      { id:'row', name:'Row', group:'Round', targetWeight:0, targetReps:[500], prevWeight:0, prevReps:[500], note:'500m – note time (s)' },
-      { id:'burpees', name:'Burpees', group:'Round', targetWeight:0, targetReps:[15], prevWeight:0, prevReps:[15] },
-      { id:'carry', name:'Farmer carry', group:'Round', targetWeight:20, targetReps:[20], prevWeight:20, prevReps:[20], note:'20m · weight per hand' },
-      { id:'ski', name:'SkiErg', group:'Round', targetWeight:0, targetReps:[250], prevWeight:0, prevReps:[250], note:'250m – note time (s)' },
+      makeEx('row'),
+      makeEx('burpees'),
+      makeEx('carry'),
+      makeEx('ski'),
     ],
+    extras: ['sled','wallball','sandbag'],
     hasCore: false,
     isHyrox: true
   }
@@ -560,65 +648,83 @@ function selectSession(type) {
   // Build exercises
   const container = document.getElementById('exercises-container');
   container.innerHTML = '';
-  let currentGroup = '';
+  tmpl.exercises.forEach(ex => buildExBlock(ex));
 
-  tmpl.exercises.forEach((ex, idx) => {
-    if (ex.group !== currentGroup) {
-      currentGroup = ex.group;
-      const div = document.createElement('div');
-      div.className = 'section-divider';
-      div.textContent = ex.group;
-      container.appendChild(div);
-    }
-
-    const block = document.createElement('div');
-    block.className = 'ex-block';
-    block.dataset.exId = ex.id;
-
-    const ssTag = ex.superset ? '<span class="ss-tag">superset</span>' : '';
-    const newTag = ex.newLoad ? '<span class="badge badge-success" style="font-size:10px;margin-left:6px">+1kg</span>' : '';
-    const prevRepsStr = ex.prevReps.join('/');
-    const prevInfo = ex.prevWeight ? ex.prevWeight + 'kg · ' + prevRepsStr : prevRepsStr;
-
-    const isHyrox = tmpl.isHyrox;
-    const weightRow = isHyrox && ex.targetWeight === 0 ? '' : `
-      <div class="ex-weight-row">
-        <div class="weight-chip"><span class="weight-label">Target</span><span class="weight-target-val">${ex.targetWeight} kg</span></div>
-        <div class="weight-chip weight-actual"><span class="weight-label">Actual</span><input type="number" class="weight-input" placeholder="kg" min="0" max="300" step="0.5" oninput="updateProgress()"></div>
-        <span class="weight-unit">kg</span>
-      </div>`;
-
-    const setsHtml = ex.targetReps.map((target, i) => `
-      <div class="set-col">
-        <div class="set-lbl">S${i+1}</div>
-        <input type="number" class="set-inp" placeholder="–" min="0" max="50" data-target="${target}" oninput="updateProgress()" inputmode="numeric">
-        <div class="set-target">→${target}</div>
-      </div>`).join('');
-
-    const noteHint = ex.note ? `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${ex.note}</div>` : '';
-
-    block.innerHTML = `
-      <div class="ex-top">
-        <div style="display:flex;align-items:center">${ssTag}<div class="ex-name">${ex.name}</div>${newTag}</div>
-        <div class="ex-meta">
-          <div class="ex-prev">Prev: ${prevInfo}</div>
-        </div>
-      </div>
-      ${weightRow}
-      <div class="sets-area">
-        ${noteHint}
-        <div class="sets-row">${setsHtml}</div>
-        <div class="rpe-row">
-          <span class="rpe-lbl">RPE</span>
-          ${[6,7,8,9,10].map(v => `<div class="rpe-chip" onclick="selectRpe(this,${v})">${v}</div>`).join('')}
-        </div>
-        <textarea class="note-inp" rows="1" placeholder="Notes…"></textarea>
-      </div>`;
-    container.appendChild(block);
-  });
-
+  // Populate exercise library picker
+  populateExLib();
   updateProgress();
   document.getElementById('header-sub').textContent = 'In progress';
+}
+
+function buildExBlock(ex) {
+  const tmpl = SESSIONS_TEMPLATE[currentSession];
+  const isHyrox = tmpl && tmpl.isHyrox;
+  const container = document.getElementById('exercises-container');
+  const block = document.createElement('div');
+  block.className = 'ex-block';
+  block.dataset.exId = ex.id;
+  const prevRepsStr = (ex.prevReps || ex.targetReps).join('/');
+  const prevInfo = ex.prevWeight ? ex.prevWeight + 'kg · ' + prevRepsStr : prevRepsStr;
+  const ssTag = ex.superset ? '<span class="ss-tag">superset</span>' : '';
+  const weightRow = isHyrox && ex.targetWeight === 0 ? '' : `
+    <div class="ex-weight-row">
+      <div class="weight-chip"><span class="weight-label">Target</span><span class="weight-target-val">${ex.targetWeight} kg</span></div>
+      <div class="weight-chip weight-actual"><span class="weight-label">Actual</span><input type="number" class="weight-input" placeholder="kg" min="0" max="300" step="0.5" oninput="updateProgress()"></div>
+      <span class="weight-unit">kg</span>
+    </div>`;
+  const setsHtml = ex.targetReps.map((target, i) => `
+    <div class="set-col">
+      <div class="set-lbl">S${i+1}</div>
+      <input type="number" class="set-inp" placeholder="–" min="0" max="50" data-target="${target}" oninput="updateProgress()" inputmode="numeric">
+      <div class="set-target">→${target}</div>
+    </div>`).join('');
+  const noteHint = ex.note ? `<div style="font-size:11px;color:var(--text3);margin-bottom:6px">${ex.note}</div>` : '';
+  block.innerHTML = `
+    <div class="ex-top">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center">${ssTag}<div class="ex-name">${ex.name}</div></div>
+        <button onclick="this.closest('.ex-block').remove();updateProgress()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+      <div class="ex-meta"><div class="ex-prev">Ref: ${prevInfo}</div></div>
+    </div>
+    ${weightRow}
+    <div class="sets-area">
+      ${noteHint}
+      <div class="sets-row">${setsHtml}</div>
+      <div class="rpe-row">
+        <span class="rpe-lbl">RPE</span>
+        ${[6,7,8,9,10].map(v => `<div class="rpe-chip" onclick="selectRpe(this,${v})">${v}</div>`).join('')}
+      </div>
+      <textarea class="note-inp" rows="1" placeholder="Notes…"></textarea>
+    </div>`;
+  container.appendChild(block);
+  updateProgress();
+}
+
+function populateExLib() {
+  filterExLib();
+}
+
+function filterExLib() {
+  const tmpl = SESSIONS_TEMPLATE[currentSession];
+  const query = (document.getElementById('ex-search').value || '').toLowerCase();
+  const existing = new Set([...document.querySelectorAll('.ex-block[data-ex-id]')].map(b => b.dataset.exId));
+  const list = document.getElementById('ex-lib-list');
+  list.innerHTML = '';
+  Object.entries(EXERCISE_LIBRARY).forEach(([id, ex]) => {
+    if (existing.has(id)) return;
+    if (query && !ex.name.toLowerCase().includes(query) && !ex.group.toLowerCase().includes(query)) return;
+    const chip = document.createElement('div');
+    chip.style.cssText = 'padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer';
+    chip.textContent = ex.name;
+    chip.title = ex.group;
+    chip.onclick = () => {
+      const exObj = makeEx(id);
+      buildExBlock(exObj);
+      chip.remove();
+    };
+    list.appendChild(chip);
+  });
 }
 
 function backToSelector() {
