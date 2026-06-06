@@ -278,6 +278,11 @@
             <div class="session-type">Hyrox</div>
             <div class="session-desc">Row · Burpees · Carry · Ski</div>
           </div>
+          <div class="session-card" onclick="selectSession('cardio')">
+            <div class="session-icon">🏃</div>
+            <div class="session-type">Cardio</div>
+            <div class="session-desc">Run · Bike · Intervals</div>
+          </div>
         </div>
       </div>
 
@@ -305,6 +310,14 @@
         <div class="prog-bar-bg"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
         <div class="prog-label" id="prog-label" style="margin-bottom:12px">0 / 0 logged</div>
 
+        <!-- Warmup -->
+        <div id="warmup-section" style="display:none">
+          <div class="section-divider">Warm-up</div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="core-chips" id="warmup-chips"></div>
+          </div>
+        </div>
+
         <div id="exercises-container"></div>
 
         <!-- Add exercise -->
@@ -322,10 +335,10 @@
         <div id="core-section" style="display:none">
           <div class="section-divider">Core finisher</div>
           <div class="card" style="margin-bottom:12px">
-            <div class="core-chips">
-              <div class="core-chip" onclick="this.classList.toggle('done')">Plank 3×45s</div>
-              <div class="core-chip" onclick="this.classList.toggle('done')">Heel touch 3×20</div>
-              <div class="core-chip" onclick="this.classList.toggle('done')">Side bends 3×15</div>
+            <div class="card-body" style="padding-bottom:8px">
+              <input type="text" id="core-search" placeholder="Search core exercise…" oninput="filterCoreLib()" style="width:100%;height:36px;padding:0 10px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);margin-bottom:10px">
+              <div id="core-lib-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+              <div id="core-selected" class="core-chips" style="padding:0;flex-direction:column;gap:4px"></div>
             </div>
           </div>
         </div>
@@ -434,6 +447,7 @@ const EXERCISE_LIBRARY = {
   pecdeck:      { name:'Pec deck / machine fly',   group:'Chest',           defaultWeight:40, defaultReps:[12,12,12] },
   cablefly:     { name:'Cable crossover fly',       group:'Chest',           defaultWeight:10, defaultReps:[12,12,12], note:'Per side' },
   dbbench:      { name:'DB flat bench press',       group:'Chest',           defaultWeight:20, defaultReps:[10,10,10] },
+  bbbench:      { name:'Barbell bench press',        group:'Chest',           defaultWeight:60, defaultReps:[8,8,8,8] },
   // ── SHOULDERS ──────────────────────────────────────────────
   ohp:          { name:'DB shoulder press',         group:'Shoulders',       defaultWeight:12, defaultReps:[8,8,8] },
   laterals:     { name:'Lateral raises',            group:'Shoulders',       defaultWeight:5,  defaultReps:[12,12,12] },
@@ -481,6 +495,28 @@ const EXERCISE_LIBRARY = {
   sled:         { name:'Sled push',                 group:'Cardio',          defaultWeight:50, defaultReps:[20], note:'20m' },
   wallball:     { name:'Wall balls',                group:'Cardio',          defaultWeight:6,  defaultReps:[20] },
   sandbag:      { name:'Sandbag lunges',            group:'Cardio',          defaultWeight:20, defaultReps:[20], note:'20m' },
+  // ── RUNNING / CARDIO ───────────────────────────────────────
+  run5k:        { name:'Run 5km',                   group:'Cardio',          defaultWeight:0,  defaultReps:[1], note:'Log time (mm:ss)' },
+  run10k:       { name:'Run 10km',                  group:'Cardio',          defaultWeight:0,  defaultReps:[1], note:'Log time (mm:ss)' },
+  cycling:      { name:'Cycling',                   group:'Cardio',          defaultWeight:0,  defaultReps:[1], note:'Log distance (km) or time (min)' },
+  runintervals: { name:'Intervals 400m',             group:'Cardio',          defaultWeight:0,  defaultReps:[8], note:'Reps – log each time (s)' },
+  jumprope:     { name:'Jump rope',                 group:'Cardio',          defaultWeight:0,  defaultReps:[3], note:'Sets – log duration (min)' },
+};
+
+const CORE_LIBRARY = [
+  'Plank 3×45s', 'Heel touch 3×20', 'Side bends 3×15',
+  'Hollow hold 3×30s', 'Hanging leg raise 3×12', 'Cable crunch 3×15',
+  'Ab rollout 3×10', 'Side plank 2×40s/side', 'Dead bug 3×10/side',
+  'Russian twist 3×20', 'Bicycle crunch 3×20', 'Mountain climbers 3×30s',
+  'Ab wheel 3×10', 'Pallof press 3×12/side',
+];
+
+const WARMUP_DATA = {
+  push:   ['Shoulder circles 2×10', 'Band pull-aparts 2×15', 'Light press warmup 2×10', 'Arm swings 30s'],
+  pull:   ['Band pull-aparts 2×15', 'Lat activation 2×10', 'Scapular pull-ups 10', 'Arm circles 30s'],
+  legs:   ['Hip circles 2×10', 'Leg swings 10/side', 'BW squats 2×15', 'Walking lunges (BW) 10'],
+  hyrox:  ['Easy jog/row 5 min', 'Dynamic stretch 3 min', 'Joint mobility', 'Practice movements'],
+  cardio: ['Walk 5 min', 'Dynamic stretch 3 min', 'Strides 3×30s', 'Hip flexor stretch 30s'],
 };
 
 function makeEx(id, overrides = {}) {
@@ -510,7 +546,7 @@ const SESSIONS_TEMPLATE = {
       makeEx('rope-oh'),
       makeEx('pushdown'),
     ],
-    extras: ['pecdeck','cablefly','dbbench','incline30','frontrase','arnoldpress','skullcrusher'],
+    extras: ['pecdeck','cablefly','dbbench','bbbench','incline30','frontrase','arnoldpress','skullcrusher'],
     hasCore: true
   },
   pull: {
@@ -548,6 +584,16 @@ const SESSIONS_TEMPLATE = {
     extras: ['sled','wallball','sandbag'],
     hasCore: false,
     isHyrox: true
+  },
+  cardio: {
+    name: 'Cardio', icon: '🏃', badge: 'Run · Bike · Intervals',
+    exercises: [
+      makeEx('run5k'),
+      makeEx('runintervals'),
+    ],
+    extras: ['run10k','cycling','jumprope','row','ski','burpees'],
+    hasCore: false,
+    isCardio: true
   }
 };
 
@@ -589,11 +635,11 @@ function renderHome() {
   document.getElementById('home-date').textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
 
   // Next session recommendation
-  const counts = { push: 0, pull: 0, legs: 0, hyrox: 0 };
+  const counts = { push: 0, pull: 0, legs: 0, hyrox: 0, cardio: 0 };
   const recent7 = sessions.filter(s => (Date.now() - new Date(s.date).getTime()) < 7 * 86400000);
   recent7.forEach(s => { if (counts[s.type] !== undefined) counts[s.type]++; });
 
-  const order = ['push', 'pull', 'legs', 'hyrox'];
+  const order = ['push', 'pull', 'legs', 'hyrox', 'cardio'];
   let rec = order.reduce((a, b) => counts[a] <= counts[b] ? a : b);
   const recData = SESSIONS_TEMPLATE[rec];
   document.getElementById('next-session-name').textContent = recData.icon + ' ' + recData.name;
@@ -642,8 +688,19 @@ function selectSession(type) {
   durInterval = setInterval(updateDuration, 30000);
   updateDuration();
 
+  // Warmup
+  const warmup = WARMUP_DATA[type] || [];
+  const warmupChips = document.getElementById('warmup-chips');
+  warmupChips.innerHTML = warmup.map(w => `<div class="core-chip" onclick="this.classList.toggle('done')">${w}</div>`).join('');
+  document.getElementById('warmup-section').style.display = warmup.length ? 'block' : 'none';
+
   // Core
   document.getElementById('core-section').style.display = tmpl.hasCore ? 'block' : 'none';
+  if (tmpl.hasCore) {
+    document.getElementById('core-selected').innerHTML = '';
+    document.getElementById('core-search').value = '';
+    filterCoreLib();
+  }
 
   // Build exercises
   const container = document.getElementById('exercises-container');
@@ -727,6 +784,38 @@ function filterExLib() {
   });
 }
 
+function filterCoreLib() {
+  const searchEl = document.getElementById('core-search');
+  if (!searchEl) return;
+  const query = (searchEl.value || '').toLowerCase();
+  const existing = new Set([...document.querySelectorAll('#core-selected .core-chip')].map(c => c.dataset.name));
+  const list = document.getElementById('core-lib-list');
+  list.innerHTML = '';
+  CORE_LIBRARY.forEach(name => {
+    if (existing.has(name)) return;
+    if (query && !name.toLowerCase().includes(query)) return;
+    const chip = document.createElement('div');
+    chip.style.cssText = 'padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer';
+    chip.textContent = name;
+    chip.onclick = () => addCoreChip(name);
+    list.appendChild(chip);
+  });
+}
+
+function addCoreChip(name) {
+  const container = document.getElementById('core-selected');
+  const chip = document.createElement('div');
+  chip.className = 'core-chip done';
+  chip.dataset.name = name;
+  chip.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;border-radius:var(--radius-sm);';
+  chip.innerHTML = `<span>${name}</span><button onclick="event.stopPropagation();this.closest('.core-chip').remove();filterCoreLib()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 2px">×</button>`;
+  chip.onclick = e => { if (e.target.tagName !== 'BUTTON') chip.classList.toggle('done'); };
+  container.appendChild(chip);
+  const searchEl = document.getElementById('core-search');
+  if (searchEl) searchEl.value = '';
+  filterCoreLib();
+}
+
 function backToSelector() {
   if (durInterval) clearInterval(durInterval);
   document.getElementById('log-selector').style.display = 'block';
@@ -788,21 +877,22 @@ function finishSession() {
   const tmpl = SESSIONS_TEMPLATE[currentSession];
   const blocks = document.querySelectorAll('.ex-block[data-ex-id]');
   const exData = [];
-  blocks.forEach((b, i) => {
-    const ex = tmpl.exercises[i];
+  blocks.forEach(b => {
+    const exId = b.dataset.exId;
+    const libEx = EXERCISE_LIBRARY[exId] || {};
     const sets = [...b.querySelectorAll('.set-inp')].map(s => parseInt(s.value) || 0);
     const w = b.querySelector('.weight-input');
     const rpe = b.querySelector('.rpe-chip.active');
-    const note = b.querySelector('.note-inp');
+    const noteEl = b.querySelector('textarea.note-inp');
     exData.push({
-      id: ex.id,
-      name: ex.name,
-      actualWeight: w ? parseFloat(w.value) || ex.targetWeight : ex.targetWeight,
-      targetWeight: ex.targetWeight,
+      id: exId,
+      name: b.querySelector('.ex-name') ? b.querySelector('.ex-name').textContent : (libEx.name || exId),
+      actualWeight: w ? parseFloat(w.value) || libEx.defaultWeight || 0 : libEx.defaultWeight || 0,
+      targetWeight: libEx.defaultWeight || 0,
       reps: sets,
-      targetReps: ex.targetReps,
+      targetReps: libEx.defaultReps || [],
       rpe: rpe ? parseInt(rpe.textContent) : null,
-      note: note ? note.value : ''
+      note: noteEl ? noteEl.value : ''
     });
   });
 
@@ -852,19 +942,20 @@ function renderHistory() {
     const tmpl = SESSIONS_TEMPLATE[s.type];
     const dateStr = new Date(s.date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
     const exSummary = s.exercises.map(e =>
-      `<div class="ex-summary"><span class="ex-summary-name">${e.name}</span> — ${e.actualWeight}kg · ${e.reps.join('/')}${e.rpe ? ' · RPE '+e.rpe : ''}${e.note ? '<div style="font-size:12px;color:var(--text3);margin-top:2px;font-style:italic">"'+e.note+'"</div>' : ''}</div>`
+      `<div class="ex-summary"><span class="ex-summary-name">${e.name}</span> — ${e.actualWeight > 0 ? e.actualWeight+'kg · ' : ''}${e.reps.join('/')}${e.rpe ? ' · RPE '+e.rpe : ''}${e.note ? '<div style="font-size:12px;color:var(--text3);margin-top:2px;font-style:italic">'+e.note+'</div>' : ''}</div>`
     ).join('');
+    const notesHtml = s.notes ? `<div style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;color:var(--text2)"><span style="font-weight:600;color:var(--text);margin-right:4px">📝</span>${s.notes}</div>` : '';
     const badges = (s.energy ? `<span class="badge badge-info">⚡ ${s.energy}/5</span> ` : '') + (s.sleep ? `<span class="badge badge-success">😴 ${s.sleep}/5</span>` : '');
     return `
       <div class="session-history-card" onclick="toggleHistory(this)">
         <div class="shc-header">
           <div>
             <div class="shc-title">${tmpl.icon} ${tmpl.name}</div>
-            <div class="shc-meta">${dateStr} · ${s.duration || '–'} min ${badges}</div>
+            <div class="shc-meta">${dateStr} · ${s.duration || '–'} min ${badges}${s.notes ? ' 📝' : ''}</div>
           </div>
           <span style="font-size:20px;color:var(--text3)">›</span>
         </div>
-        <div class="shc-detail">${exSummary}${s.notes ? '<div style="margin-top:8px;font-size:13px;color:var(--text2);font-style:italic">"'+s.notes+'"</div>' : ''}</div>
+        <div class="shc-detail">${exSummary}${notesHtml}</div>
       </div>`;
   }).join('');
 }
